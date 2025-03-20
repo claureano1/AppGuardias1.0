@@ -32,14 +32,8 @@ import LoginScreen from './src/Login'
 import HomeScreen from './src/Home'
 import QrLector from './src/QrLector'
 import QrManual from './src/QrManual'
-/*
-function HomeScreen() {
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text>Home Screen</Text>
-    </View>
-  );
-}*/
+import History from './src/History'
+
 
 const Stack = createNativeStackNavigator();
 
@@ -114,7 +108,21 @@ function RootStack() {
 
         }}
       />
+      <Stack.Screen
+        name="History"
+        component={History}
+        options={{
+          title: 'Historial de visitas',
+          headerStyle: {
+            backgroundColor: '#fdcc2d', //Set Header color
+          },
+          headerTintColor: '#000', //Set Header text color
+          headerTitleStyle: {
+            fontWeight: 'bold', //Set Header text style
+          },
 
+        }}
+      />
     </Stack.Navigator>
   );
 }

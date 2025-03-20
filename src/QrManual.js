@@ -11,40 +11,56 @@ class QrManual extends Component {
             showInput: true,
             idVisita: null,
             qrValido: false,
-            nombreAcceso: null,
+            guestName: null,
             codigoQR: null,
+            expirationDate: null,
         };
     }
 
-    validateQR = (codigo) => {
-        const { navigation } = this.props;
-        this.setState({ qrValido: true });
+    validateQR = async (Codigo) => {
+        this.setState({ QRValido: true }); // Muestra el indicador de carga
 
-        const data = new FormData();
-        data.append('qrCode', codigo);
-        console.log('FormData: ', data);
+        const data = JSON.stringify({
+            qrCode: Codigo, // Envía el código QR en el cuerpo de la solicitud
+        });
 
-        axios.post('https://wafleqr.site/ws/validateQR.php', data, {
+        const config = {
+            method: 'post',
+            maxBodyLength: Infinity,
+            url: 'https://wafleqr.site/ws/validateQR.php',
             headers: {
-                'Content-Type': 'multipart/form-data',
+                'Content-Type': 'application/json',
             },
-        })
-            .then((response) => {
-                console.log('response: ', response.data);
+            data: data,
+        };
 
+        console.log("Enviando solicitud de validación de QR...");
+
+        axios.request(config)
+            .then((response) => {
+                console.log("Respuesta del servidor: ", JSON.stringify(response.data));
                 if (response.data.Status) {
-                    this.setState({ nombreAcceso: response.data.nombre_acceso, qrValido: false });
+                    // Si el QR es válido, actualiza el estado con los datos recibidos
+                    this.setState({ guestName: response.data.AccessDetails.guestName, expirationDate: response.data.AccessDetails.expirationDate, QRValido: false, showInput: false });
                 } else {
-                    Alert.alert('Error', 'Acceso no permitido', [{ text: 'Aceptar' }]);
+                    // Si el QR no es válido, muestra una alerta
+                    Alert.alert('Error', response.data.Message || 'Acceso no permitido', [{
+                        text: 'Aceptar',
+                    }]);
+                    this.setState({ QRValido: false }); // Oculta el indicador de carga
                 }
             })
             .catch((error) => {
-                console.error('Error al enviar los datos:', error.response ? error.response.data : error.message);
+                console.error("Error al validar el QR: ", error);
+                Alert.alert('Error', 'Ocurrió un problema al validar el código QR', [{
+                    text: 'Aceptar',
+                }]);
+                this.setState({ QRValido: false }); // Oculta el indicador de carga
             });
-    };
+    }
 
     render() {
-        const { showInput, qrValido, nombreAcceso, codigoQR } = this.state;
+        const { showInput, qrValido, guestName, codigoQR, expirationDate } = this.state;
 
         return (
             <View style={Styles.contentWrapper}>
@@ -71,8 +87,11 @@ class QrManual extends Component {
                             ) : (
                                 <View>
                                     <Text style={Styles.labelAcceso}>Acceso Valido</Text>
-                                    <Text style={Styles.labelUsuario}>usuario: </Text>
-                                    <Text style={Styles.labelNombreUsuario}>{nombreAcceso}</Text>
+                                    <Text style={Styles.labelUsuario}>Invitado: </Text>
+                                    <Text style={Styles.labelNombreUsuario}>{guestName}</Text>
+
+                                    <Text style={Styles.labelUsuario}>Fecha de Expiración: </Text>
+                                    <Text style={Styles.labelNombreUsuario}>{expirationDate}</Text>
                                 </View>
                             )}
                         </View>

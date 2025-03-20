@@ -113,7 +113,7 @@ export default class HomeScreen extends React.Component {
 					{/* Botón: Registro de Visitas */}
 					<TouchableOpacity
 						style={Styles.menuButton}
-						onPress={() => this.props.navigation.navigate('VisitRecords')}
+						onPress={() => this.props.navigation.navigate('History')}
 					>
 						<Text style={Styles.buttonText}>Registro de Visitas</Text>
 					</TouchableOpacity>

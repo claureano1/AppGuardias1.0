@@ -2,6 +2,7 @@
 import React, { Component } from 'react';
 import { View, Text, Alert, ActivityIndicator, TextInput, TouchableOpacity, FlatList } from 'react-native';
 import { Styles } from './Styles.js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const axios = require('axios').default;
 
 class History extends Component {
@@ -26,8 +27,8 @@ class History extends Component {
 
             console.log('usuario:::::::: ', parsed);
 
-            if (parsed?.idSecurity && parsed?.idResidential) {
-                this.getHistory(parsed.idSecurity, parsed.idResidential);
+            if (parsed?.id && parsed?.idResidential) {
+                this.getHistory(parsed.id, parsed.idResidential);
             } else {
                 console.log('idSecurity o idResidential no existen en userData');
             }
@@ -39,28 +40,50 @@ class History extends Component {
 
     getHistory = async (idSecurity, idResidential) => {
         this.setState({ isLoading: true });
+        var userData = this.state.UserData;
 
         var FechaDesde = new Date();
         FechaDesde.setDate(FechaDesde.getDate() - 7);
 
         var FechaHasta = new Date();
-
-
-        axios.post('https://wafleqr.site/ws/getHistory.php', {
+        const data = JSON.stringify({
             idSecurity: idSecurity,
-            idResidential: idResidential,
-            FechaDesde: FechaDesde,
-            FechaHasta: FechaHasta,
-        })
-            .then((response) => {
-                console.log('response: ', response.data);
+            idResidential:idResidential,
+            startDate: FechaDesde,
+            endDate: FechaHasta,
+        });
+        console.log("Enviando solicitud de validación de QR...", data);
 
-                this.setState({ historial: response.data, isLoading: false });
+        const config = {
+            method: 'post',
+            maxBodyLength: Infinity,
+            url: 'https://wafleqr.site/ws/residentialsAccessHistory.php',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            data: data,
+        };
+
+        console.log("Enviando solicitud de validación de QR...", data);
+
+        axios.request(config)
+            .then((response) => {
+                console.log("Respuesta del servidor: ", JSON.stringify(response.data));
+                if (response.data.Status) {
+                    
+                } else {
+                   
+
+                }
             })
             .catch((error) => {
-                console.log('error: ', error);
-                this.setState({ isLoading: false });
+                console.error("Error al validar el QR: ", error);
+                Alert.alert('Error', 'Ocurrió un problema al validar el código QR', [{
+                    text: 'Aceptar',
+                }]);
+                this.setState({ QRValido: false }); // Oculta el indicador de carga
             });
+
     };
 
 
