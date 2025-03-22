@@ -110,17 +110,17 @@ export default class LoginScreen extends React.Component {
                     <View style={Styles.triangle} />
                     <Text style={Styles.title}>Login</Text>
                     <View style={Styles.underline} />
-                    <Text style={Styles.labelTextLogin}>Username</Text>
+                    <Text style={Styles.labelTextLogin}>Nombre de usuario</Text>
                     <TextInput
                         style={isPhoneValid ? Styles.input : Styles.mailInputRed}
-                        placeholder="Enter your username"
+                        placeholder="Ingrese su usuario"
                         onChangeText={this.validatePhoneNumber}
                         value={phoneNumber}
                     />
-                    <Text style={Styles.labelTextLogin}>Password</Text>
+                    <Text style={Styles.labelTextLogin}>Contraseña</Text>
                     <TextInput
                         style={Styles.input}
-                        placeholder="Enter your password"
+                        placeholder="Ingrese su contraseña"
                         secureTextEntry={true}
                         onChangeText={(text) => this.setState({ password: text })}
                         value={password}

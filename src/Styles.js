@@ -647,6 +647,24 @@ const Styles = StyleSheet.create({
         alignContent: 'center',
         alignItems: 'center',
     },
+
+    item: {
+        backgroundColor: '#ccc',
+        padding: 10,
+        marginVertical: 8,
+        marginHorizontal: 16,
+        flexDirection: 'column',
+        borderRadius: 10,
+    },
+
+    textwrapper: {
+        flexDirection: 'row',
+    },
+
+    textlabel: {
+        fontWeight: 'bold',
+        width: '40%',
+    },
 });
 
 export { Styles };

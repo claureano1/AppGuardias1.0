@@ -24,7 +24,7 @@ export default class HomeScreen extends React.Component {
 	componentDidMount() {
 		this._unsubscribe = this.props.navigation.addListener('focus', () => {
 			this.getUserData();
-			});
+		});
 
 		// Configura el botón de logout en el header
 		this.props.navigation.setOptions({
@@ -91,9 +91,9 @@ export default class HomeScreen extends React.Component {
 			<View style={[Styles.contentWrapper]}>
 
 				<View style logowrapper><Image
-							source={require('./assets/icon.png')}
-							style={Styles.logoHome}>
-						</Image></View>
+					source={require('./assets/icon.png')}
+					style={Styles.logoHome}>
+				</Image></View>
 				<View style={Styles.card}>
 					<TouchableOpacity
 						style={Styles.menuButton}
@@ -109,6 +109,20 @@ export default class HomeScreen extends React.Component {
 					>
 						<Text style={Styles.buttonText}>Ingresar QR Manual</Text>
 					</TouchableOpacity>
+
+
+
+					{/* Botón: Marcar Salida */}
+					<TouchableOpacity
+						style={Styles.menuButton}
+						onPress={() => this.props.navigation.navigate('QrExit')}
+					>
+						<Text style={Styles.buttonText}>Marcar Salida</Text>
+					</TouchableOpacity>
+
+
+
+
 
 					{/* Botón: Registro de Visitas */}
 					<TouchableOpacity
