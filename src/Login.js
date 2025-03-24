@@ -38,7 +38,7 @@ export default class LoginScreen extends React.Component {
 
     handleLogin = async () => {
         const { phoneNumber, password } = this.state;
-
+        console.log('phoneNumber: ', phoneNumber);
         if (this.areFieldsValid(phoneNumber, password)) {
             try {
                 const response = await this.sendLoginRequest(phoneNumber, password);
@@ -113,6 +113,7 @@ export default class LoginScreen extends React.Component {
                     <Text style={Styles.labelTextLogin}>Nombre de usuario</Text>
                     <TextInput
                         style={isPhoneValid ? Styles.input : Styles.mailInputRed}
+                        placeholderTextColor="#000"
                         placeholder="Ingrese su usuario"
                         onChangeText={this.validatePhoneNumber}
                         value={phoneNumber}
@@ -120,6 +121,7 @@ export default class LoginScreen extends React.Component {
                     <Text style={Styles.labelTextLogin}>Contraseña</Text>
                     <TextInput
                         style={Styles.input}
+                        placeholderTextColor="#000"
                         placeholder="Ingrese su contraseña"
                         secureTextEntry={true}
                         onChangeText={(text) => this.setState({ password: text })}

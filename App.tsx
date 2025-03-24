@@ -32,7 +32,10 @@ import LoginScreen from './src/Login'
 import HomeScreen from './src/Home'
 import QrLector from './src/QrLector'
 import QrManual from './src/QrManual'
+import QrExit from './src/QrExit';
 import History from './src/History'
+import AllResidents from './src/AllResidents'
+
 
 
 const Stack = createNativeStackNavigator();
@@ -108,6 +111,22 @@ function RootStack() {
 
         }}
       />
+
+<Stack.Screen
+        name="QrExit"
+        component={QrExit}
+        options={{
+          title: 'Marcar salida',
+          headerStyle: {
+            backgroundColor: '#fdcc2d', //Set Header color
+          },
+          headerTintColor: '#000', //Set Header text color
+          headerTitleStyle: {
+            fontWeight: 'bold', //Set Header text style
+          },
+
+        }}
+      />
       <Stack.Screen
         name="History"
         component={History}
@@ -123,6 +142,24 @@ function RootStack() {
 
         }}
       />
+
+<Stack.Screen
+        name="AllResidents"
+        component={AllResidents}
+        options={{
+          title: 'Todos los Residentes',
+          headerStyle: {
+            backgroundColor: '#fdcc2d', //Set Header color
+          },
+          headerTintColor: '#000', //Set Header text color
+          headerTitleStyle: {
+            fontWeight: 'bold', //Set Header text style
+          },
+
+        }}
+      />
+
+      
     </Stack.Navigator>
   );
 }

@@ -57,9 +57,11 @@ class QrLector extends Component {
         const { navigation } = this.props;
         this.setState({ QRValido: true });
 
+        console.log("Validando QR...", Codigo);
+
         const axios = require('axios');
         let data = JSON.stringify({
-            "qrCode": Codigo,
+            "qrCode": Codigo.number,
         });
 
         let config = {
@@ -76,7 +78,7 @@ class QrLector extends Component {
             .then((response) => {
                 console.log(JSON.stringify(response.data));
                 if (response.data.Status) {
-                    this.setState({ nombre_acceso: response.data.nombre_acceso, QRValido: false });
+                    this.setState({ nombre_acceso: response.data.nombre_acceso, QRValido: true });
                 } else {
                     Alert.alert('Error', 'Acceso no permitido', [{
                         text: 'Aceptar'

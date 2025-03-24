@@ -71,6 +71,7 @@ class QrManual extends Component {
                             <TextInput
                                 style={Styles.input}
                                 placeholder="Ingrese el código"
+                                placeholderTextColor="#000"
                                 onChangeText={text => this.setState({ codigoQR: text })}
                                 value={codigoQR}
                             />

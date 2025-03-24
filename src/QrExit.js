@@ -58,14 +58,20 @@ class QrExit extends Component {
         this.setState({ QRValido: true });
 
         const axios = require('axios');
+
+        // Obtener la fecha actual para exitDate
+        const exitDate = new Date().toISOString(); // Formato ISO 8601
+
         let data = JSON.stringify({
-            "qrCode": Codigo,
+            "qrCode": Codigo, // Código QR escaneado
+           // "number": "12345", // Número (puedes reemplazarlo con un valor dinámico si es necesario)
+            "exitDate": exitDate // Fecha de salida en formato ISO
         });
 
         let config = {
             method: 'post',
             maxBodyLength: Infinity,
-            url: 'https://wafleqr.site/ws/validateQR.php',
+            url: 'https://wafleqr.site/ws/updateAccess.php',
             headers: {
                 'Content-Type': 'application/json'
             },

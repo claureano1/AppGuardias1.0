@@ -1,26 +1,35 @@
 /* eslint-disable no-unused-vars */
 import React, { Component } from 'react';
-import { View, Text, Alert, ActivityIndicator, TextInput, TouchableOpacity, FlatList } from 'react-native';
-import { Styles } from './Styles.js';
+import { View, Text, Alert, ActivityIndicator, TextInput, FlatList, StyleSheet, Button } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DatePicker from 'react-native-date-picker'
+
 const axios = require('axios').default;
 
 class History extends Component {
+    
     constructor(props) {
         super(props);
+    const FechaDesde = new Date();
+    FechaDesde.setDate(FechaDesde.getDate() - 7);
+
         this.state = {
-            historial: [],
+            historial: [], // Lista completa del historial
+            filteredHistorial: [], // Lista filtrada para mostrar
             isLoading: false,
+            searchQuery: '', // Término de búsqueda
+            guestName: null,
+            entryDate: FechaDesde,
+            exitDate: new Date(),
         };
+        this.arrayholder = [];
     }
 
     componentDidMount() {
         this.getUserData();
-
     }
 
     getUserData = async () => {
-
         try {
             const user = await AsyncStorage.getItem('userData');
             const parsed = JSON.parse(user);
@@ -37,22 +46,21 @@ class History extends Component {
         }
     };
 
-
     getHistory = async (idSecurity, idResidential) => {
         this.setState({ isLoading: true });
 
-        var FechaDesde = new Date();
-        FechaDesde.setDate(FechaDesde.getDate() - 7);
+        const FechaDesde = this.state.entryDate;
+        const FechaHasta = this.state.exitDate;
 
-        var FechaHasta = new Date();
-        const data = JSON.stringify({ //const data es un objeto que se envía al servidor
+        const data = JSON.stringify({
             idSecurity: idSecurity,
             idResidential: idResidential,
             startDate: FechaDesde,
             endDate: FechaHasta,
+            showDatePicker: false,
         });
-
-        console.log("Enviando solicitud de validación de QR...", data);
+        
+        console.log(data);
 
         const config = {
             method: 'post',
@@ -69,12 +77,11 @@ class History extends Component {
                 console.log("Respuesta completa del servidor: ", response.data);
 
                 if (response.data.Status) {
-                    // Ajusta esto según la estructura real de la respuesta
-                    const historial = response.data.AccessHistory; // Cambia 'history' según la estructura real
-                    console.log("Historial recibido: ", historial);
-
-                    this.setState({ historial: historial, isLoading: false }, () => {
-                        console.log("Estado actualizado con historial: ", this.state.historial);
+                    const historial = response.data.AccessHistory; // Ajusta según la estructura real
+                    this.setState({
+                        historial: historial,
+                        filteredHistorial: historial, // Inicializa la lista filtrada
+                        isLoading: false,
                     });
                 } else {
                     Alert.alert('Error', 'No se pudo obtener el historial de visitas');
@@ -90,44 +97,90 @@ class History extends Component {
             });
     };
 
+    handleSearch = (text) => {
+        const { historial } = this.state;
+
+        // Filtrar el historial en función del término de búsqueda
+        const filteredHistorial = historial.filter((item) => {
+            const guestName = item.guestName.toLowerCase(); // Nombre del visitante
+            return guestName.includes(text.toLowerCase()); // Verifica si coincide con el término de búsqueda
+        });
+
+        // Actualizar el estado con los resultados filtrados
+        this.setState({ searchQuery: text, filteredHistorial });
+    };
+
     render() {
+        const { filteredHistorial, isLoading, searchQuery } = this.state;
+
+        if (isLoading) {
+            return <ActivityIndicator size="large" color="#0000ff" />;
+        }
+
         return (
-            <View style={Styles.contentWrapper}>
-               
+            <View style={styles.container}>
+                {/* Campo de búsqueda */}
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder="Buscar en historial..."
+                    value={searchQuery}
+                    onChangeText={this.handleSearch} // Llama a la función handleSearch
+                />
 
-                {this.state.isLoading ? (
-                    <ActivityIndicator size="large" color="#0000ff" />
-                ) : (
-                    <View style={Styles.container}>
-                        
-                        <FlatList
-                            data={this.state.historial}
-                            renderItem={({ item }) => (
-                                <View style={Styles.item}>
-                                    <View style={Styles.textwrapper}><Text style={Styles.textlabel}>Nombre:</Text><Text>{item.guestName}</Text></View>
-                                    <View style={Styles.textwrapper}><Text style={Styles.textlabel}>Fecha de entrada:</Text><Text>{item.entryDate}</Text></View>
-                                    <View style={Styles.textwrapper}><Text style={Styles.textlabel}>Fecha de salida:</Text><Text>{item.exitDate}</Text></View>
-                                        
+                {/* <Button title="Open" onPress={() => this.setState({showDatePicker : true})} /> */}
+                <DatePicker
+                    modal
+                    open={this.state.showDatePicker}
+                    date={this.state.entryDate}
+                    mode="date"
+                    onConfirm={(date) => {
+                      console.log('Fecha de entrada: ', date);
+                      this.setState({entryDate : date, showDatePicker : false})
 
-                                </View>
-                            )}
-                            keyExtractor={(item, index) => index.toString()}
-                        />
-                    </View>
-                )}
+                    }}
+                    onCancel={() => {
+                        console.log('Cancelado');
+                        this.setState({showDatePicker : false})
+                    }}
+                />
+
+                {/* Lista del historial */}
+                <FlatList
+                    data={filteredHistorial} // Usa la lista filtrada
+                    renderItem={({ item }) => (
+                        <View style={styles.item}>
+                            <Text>Nombre: {item.guestName}</Text>
+                            <Text>Fecha de entrada: {item.entryDate}</Text>
+                            <Text>Fecha de salida: {item.exitDate}</Text>
+                        </View>
+                    )}
+                    keyExtractor={(item, index) => index.toString()} // Usa el índice como clave
+                />
             </View>
         );
     }
 }
 
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        padding: 10,
+    },
+    searchInput: {
+        height: 40,
+        borderColor: '#ccc',
+        borderWidth: 1,
+        borderRadius: 5,
+        marginBottom: 10,
+        paddingHorizontal: 10,
+    },
+    item: {
+        marginBottom: 10,
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 5,
+    },
+});
+
 export default History;
-
-
-//hacer un boton que se llame marcar salida a base de la clase QR lector. 
-// y solo cambiar el endpoint para cuando el user salga de la residencia se tiene que actulizar 
-// lafecha de salida y marcar el QR inactivo en caso de alcanzar el limite de tiempo usado
-
-// crear otro boton de marcar salida y ese boton escanerar el boto qr y hara la llamda al enpoit de salida
-// en el registro de visita, marcar que visitas estan activas y que visitas ya salieron de la residencia
-
-//hacer opcion de todos los usuarios de la residencia.

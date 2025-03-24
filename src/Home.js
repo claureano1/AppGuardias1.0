@@ -1,23 +1,21 @@
 import * as React from 'react';
-import { Image, View, Text, TouchableOpacity, FlatList, ImageBackground, Linking, ActivityIndicator } from 'react-native';
+import {
+	Image,
+	View,
+	Text,
+	TouchableOpacity,
+	ActivityIndicator,
+	ImageBackground,
+	ScrollView,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-const axios = require('axios').default;
-
-import { Styles } from './Styles.js'
-
-
-
-
+import { Styles } from './Styles.js';
 
 export default class HomeScreen extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
 			UserData: null,
-			Orders: null,
-			VelozCerrado: 0,
-			ShowNewActivity: false,
-
 		};
 	}
 
@@ -26,122 +24,126 @@ export default class HomeScreen extends React.Component {
 			this.getUserData();
 		});
 
-		// Configura el botón de logout en el header
 		this.props.navigation.setOptions({
 			headerRight: () => (
-				<TouchableOpacity onPress={this.signOut} style={{ marginRight: 15 }}>
+				<TouchableOpacity onPress={this.signOut()} style={{ marginRight: 15 }}>
 					<Text style={{ color: 'black', fontWeight: 'bold' }}>Logout</Text>
 				</TouchableOpacity>
 			),
 		});
 	}
 
-
-	signOut = async () => {
-		AsyncStorage.clear();
-		this.props.navigation.navigate('LoginScreen');
-	}
-
-
-	async removeItemValue(key) {
-		try {
-			await AsyncStorage.removeItem(key);
-			return true;
-		}
-		catch (exception) {
-			return false;
-		}
-	}
-
-
-
 	componentWillUnmount() {
 		this._unsubscribe();
 	}
 
-
-
+	signOut = async () => {
+		console.log('Sesion cerrada'); 
+/* 		AsyncStorage.clear();
+		
+		this.props.navigation.navigate('LoginScreen'); */
+	};
 
 	getUserData = async () => {
 		try {
 			let user = await AsyncStorage.getItem('userData');
 			let parsed = JSON.parse(user);
-
-			console.log('usuario:::::::: ', parsed)
-
 			if (parsed.id != null) {
-				this.setState({
-					UserData: parsed
-				});
+				this.setState({ UserData: parsed });
 			}
-		}
-		catch (error) {
+		} catch (error) {
 			console.log(error);
 		}
-	}
+	};
 
 	render() {
 		if (this.state.UserData == null) {
 			return (
-				<ActivityIndicator size="large" color="#000" style={Styles.ActivityIndicator} />
+				<ActivityIndicator
+					size="large"
+					color="#000"
+					style={Styles.activityIndicator}
+				/>
 			);
 		}
 
 		return (
-			<View style={[Styles.contentWrapper]}>
+			<ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: '#fff' }}>
+				<ImageBackground
+					source={require('./assets/parteSuperior.png')}
+					style={Styles.topBackground}
+				>
 
-				<View style logowrapper><Image
-					source={require('./assets/icon.png')}
-					style={Styles.logoHome}>
-				</Image></View>
+
+					<View style={Styles.logoWrapper}>
+						<Image
+							source={require('./assets/icon.png')}
+							style={Styles.logoHome}
+							resizeMode="contain"
+						/>
+					</View>
+
+				</ImageBackground>
+
 				<View style={Styles.card}>
+					<View style={Styles.rowButtons}>
+						<TouchableOpacity
+							style={Styles.yellowButton}
+							onPress={() => this.props.navigation.navigate('QrLector')}
+						>
+							<Image
+								source={require('./assets/ScanearQR.png')}
+								style={Styles.icon}
+							/>
+							<Text style={Styles.buttonTextDark}>Scanear QR</Text>
+						</TouchableOpacity>
+
+						<TouchableOpacity
+							style={Styles.yellowButton}
+							onPress={() => this.props.navigation.navigate('QrManual')}
+						>
+							<Image
+								source={require('./assets/IngresarQRManual.png')}
+								style={Styles.icon}
+							/>
+							<Text style={Styles.buttonTextDark}>Ingresar QR</Text>
+						</TouchableOpacity>
+					</View>
+
 					<TouchableOpacity
-						style={Styles.menuButton}
-						onPress={() => this.props.navigation.navigate('QrLector')}
-					>
-						<Text style={Styles.buttonText}>Scanear QR</Text>
-					</TouchableOpacity>
-
-					{/* Botón: Ingresar QR Manual */}
-					<TouchableOpacity
-						style={Styles.menuButton}
-						onPress={() => this.props.navigation.navigate('QrManual')}
-					>
-						<Text style={Styles.buttonText}>Ingresar QR Manual</Text>
-					</TouchableOpacity>
-
-
-
-					{/* Botón: Marcar Salida */}
-					<TouchableOpacity
-						style={Styles.menuButton}
+						style={Styles.wideButton}
 						onPress={() => this.props.navigation.navigate('QrExit')}
 					>
-						<Text style={Styles.buttonText}>Marcar Salida</Text>
+						<Text style={Styles.blackButtonText}>Marcar salida</Text>
+						<Image
+							source={require('./assets/marcarSalida.png')}
+							style={Styles.icon}
+						/>
 					</TouchableOpacity>
 
-
-
-
-
-					{/* Botón: Registro de Visitas */}
 					<TouchableOpacity
-						style={Styles.menuButton}
+						style={Styles.whiteButton}
 						onPress={() => this.props.navigation.navigate('History')}
 					>
-						<Text style={Styles.buttonText}>Registro de Visitas</Text>
+						<Text style={Styles.blackButtonText}>Registro de visitas</Text>
+						<Image
+							source={require('./assets/registroVisitas.png')}
+							style={Styles.icon}
+						/>
 					</TouchableOpacity>
 
-					{/* Botón: Todos los Usuarios */}
 					<TouchableOpacity
-						style={Styles.menuButton}
-						onPress={() => this.props.navigation.navigate('AllUsers')}
+						style={Styles.whiteButton}
+						onPress={() => this.props.navigation.navigate('AllResidents')}
 					>
-						<Text style={Styles.buttonText}>Todos los Usuarios</Text>
+						<Text style={Styles.blackButtonText}>Todos los residentes</Text>
+						<Image
+							source={require('./assets/todosResidentes.png')}
+							style={Styles.icon}
+						/>
 					</TouchableOpacity>
 				</View>
-
-			</View>
+			</ScrollView>
 		);
 	}
 }
