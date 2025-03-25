@@ -53,46 +53,52 @@ class QrExit extends Component {
         }
     };
 
+
     ValidateQR = async (Codigo) => {
-        const { navigation } = this.props;
-        this.setState({ QRValido: true });
+        this.setState({ showCamera: false});
+        const QRarray = JSON.parse(Codigo);
+        console.log("Validando QR...", QRarray);
 
-        const axios = require('axios');
-
-        // Obtener la fecha actual para exitDate
-        const exitDate = new Date().toISOString(); // Formato ISO 8601
-
-        let data = JSON.stringify({
-            "qrCode": Codigo, // Código QR escaneado
-           // "number": "12345", // Número (puedes reemplazarlo con un valor dinámico si es necesario)
-            "exitDate": exitDate // Fecha de salida en formato ISO
+        const data = JSON.stringify({
+            qrCode: QRarray.number, // Envía el código QR en el cuerpo de la solicitud
         });
 
-        let config = {
+        const config = {
             method: 'post',
             maxBodyLength: Infinity,
-            url: 'https://wafleqr.site/ws/updateAccess.php',
+            url: 'https://wafleqr.site/ws/checkOutAccess.php',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             },
-            data: data
+            data: data,
         };
+
+        console.log("Enviando solicitud de validación de QR...");
 
         axios.request(config)
             .then((response) => {
-                console.log(JSON.stringify(response.data));
+                console.log("Respuesta del servidor: ", JSON.stringify(response.data));
                 if (response.data.Status) {
-                    this.setState({ nombre_acceso: response.data.nombre_acceso, QRValido: false });
+                    Alert.alert('Salida exitosa', 'Acceso registrado correctamente', [{
+                        text: 'Aceptar',
+                        onPress: () => this.props.navigation.goBack(), // Navega a la pantalla anterior
+                    }]);
                 } else {
                     Alert.alert('Error', 'Acceso no permitido', [{
-                        text: 'Aceptar'
+                        text: 'Aceptar',
                     }]);
                 }
             })
             .catch((error) => {
-                console.log(error);
+                console.error("Error al validar el QR: ", error);
+                Alert.alert('Error', 'Ocurrió un problema al validar el código QR', [{
+                    text: 'Aceptar',
+                }]);
+                this.setState({ qrValido: false }); // Oculta el indicador de carga
             });
     }
+
+
 
     render() {
         const { hasPermission, device, showCamera, idVisita, QRValido, nombre_acceso } = this.state;
@@ -114,6 +120,8 @@ class QrExit extends Component {
             <View style={[Styles.contentWrapper]}>
                 <View style={Styles.container}>
                     {
+
+
                         showCamera ?
                             <Camera
                                 style={Styles.absoluteFill}
@@ -124,20 +132,10 @@ class QrExit extends Component {
                             />
                             :
                             <View>
-                                {
-                                    QRValido ?
-                                        <View>
-                                            <ActivityIndicator size="large" color="#00ff00" />
-                                        </View>
-                                        :
-                                        <View>
-                                            <Text style={Styles.LabelAcceso}>Acceso Valido</Text>
-                                            <Text style={Styles.LabelUsuario}>usuario: </Text>
-                                            <Text style={Styles.LabelNombreUsuario}>{nombre_acceso}</Text>
-                                        </View>
-                                }
+                                <ActivityIndicator size="large" color="#00ff00" />
                             </View>
                     }
+
 
                 </View>
             </View>

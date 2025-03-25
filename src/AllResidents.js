@@ -109,7 +109,7 @@ class AllResidents extends Component {
                 {/* Campo de búsqueda */}
                 <TextInput
                     style={styles.searchInput}
-                    placeholder="Buscar residente..."
+                    placeholder="Buscar residente por nombre o DNI..."
                     value={searchQuery}
                     onChangeText={this.handleSearch}
                 />
@@ -122,7 +122,7 @@ class AllResidents extends Component {
                             <Text>Nombre: {item.name} </Text>
                             <Text>Email: {item.email}</Text>
                             <Text>DNI: {item.DNI}</Text>
-                            <Text>Teléfono: {item.phoneNumber}</Text>
+                            <Text>Teléfono: {item.userEmail}</Text>
                             <Text>Casa: {item.idHouse}</Text>
                             <Text>Propietario: {item.isOwner ? 'Sí' : 'No'}</Text>
                         </View>

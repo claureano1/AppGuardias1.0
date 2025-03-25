@@ -11,87 +11,95 @@ class QrLector extends Component {
             hasPermission: false,
             device: null,
             showCamera: true,
-            idVisita: null,
-            QRValido: false,
+
+            qrValido: false,
             nombre_acceso: null,
         };
         this.cameraRef = React.createRef();
     }
 
-    async componentDidMount() {
-        // Solicitar permiso para la cámara
-        const status = await Camera.requestCameraPermission();
-
-        console.log("status: ", status);
-
-        this.setState({ hasPermission: status === 'authorized' || status === 'granted' });
-
-        // Obtener dispositivos de cámara
-        const devices = await Camera.getAvailableCameraDevices();
-        const backCamera = devices.find((device) => device.position === 'back');
-        this.setState({ device: backCamera });
+    componentDidMount() {
+        this.loadCamera();
     }
 
-    handleCodeScanned = (codes) => {
+    loadCamera = async () => {
+                // Solicitar permiso para la cámara
+                const status = await Camera.requestCameraPermission();
+
+                console.log("status: ", status);
+        
+                this.setState({ hasPermission: status === 'authorized' || status === 'granted' });
+        
+                // Obtener dispositivos de cámara
+                const devices = await Camera.getAvailableCameraDevices();
+                console.log("devices: ", devices);
+                const backCamera = devices.find((device) => device.position === 'back');
+
+                console.log("backCamera: ", backCamera);
+                this.setState({ device: backCamera });
+    }
+
+    handleCodeScanned = async (codes) => {
         if (codes.length > 0) {
             const codigo = codes[0];
-            /*
-          const scannedCodes = codes.map((code) => code.displayValue).join(', ');
-    
-          
-          console.log("scannedCodes: ", scannedCodes);*/
 
             if (codigo.type == "qr" && codigo.value.length > 0) {
-                this.setState({ showCamera: false, idVisita: codigo.value });
-
+                this.setState({ showCamera: false});
                 this.ValidateQR(codigo.value);
-
-
-                // Alert.alert('Código detectado', codigo.value);
             }
-            // 
+         
         }
     };
 
     ValidateQR = async (Codigo) => {
-        const { navigation } = this.props;
-        this.setState({ QRValido: true });
+     
+        this.setState({ qrValido: true });
+        const QRarray = JSON.parse(Codigo);
+        console.log("Validando QR...", QRarray);
 
-        console.log("Validando QR...", Codigo);
-
-        const axios = require('axios');
-        let data = JSON.stringify({
-            "qrCode": Codigo.number,
+        const data = JSON.stringify({
+            qrCode: QRarray.number, // Envía el código QR en el cuerpo de la solicitud
         });
 
-        let config = {
+        const config = {
             method: 'post',
             maxBodyLength: Infinity,
             url: 'https://wafleqr.site/ws/validateQR.php',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             },
-            data: data
+            data: data,
         };
+
+        console.log("Enviando solicitud de validación de QR...");
 
         axios.request(config)
             .then((response) => {
-                console.log(JSON.stringify(response.data));
+                console.log("Respuesta del servidor: ", JSON.stringify(response.data));
                 if (response.data.Status) {
-                    this.setState({ nombre_acceso: response.data.nombre_acceso, QRValido: true });
+
+
+                    // Si el QR es válido, actualiza el estado con los datos recibidos
+                    this.setState({ guestName: response.data.AccessDetails.guestName, expirationDate: response.data.AccessDetails.expirationDate, qrValido: false, showInput: false });
                 } else {
-                    Alert.alert('Error', 'Acceso no permitido', [{
-                        text: 'Aceptar'
+                    // Si el QR no es válido, muestra una alerta
+                    Alert.alert('Error', response.data.Message || 'Acceso no permitido', [{
+                        text: 'Aceptar',
                     }]);
+                    this.setState({ qrValido: false }); // Oculta el indicador de carga
                 }
             })
             .catch((error) => {
-                console.log(error);
+                console.error("Error al validar el QR: ", error);
+                Alert.alert('Error', 'Ocurrió un problema al validar el código QR', [{
+                    text: 'Aceptar',
+                }]);
+                this.setState({ qrValido: false }); // Oculta el indicador de carga
             });
     }
 
     render() {
-        const { hasPermission, device, showCamera, idVisita, QRValido, nombre_acceso } = this.state;
+        const { hasPermission, device, showCamera, qrValido, guestName, expirationDate } = this.state;
 
         if (!hasPermission) {
             return <Text>Solicitando permiso de cámara...</Text>;
@@ -120,18 +128,20 @@ class QrLector extends Component {
                             />
                             :
                             <View>
-                                {
-                                    QRValido ?
-                                        <View>
-                                            <ActivityIndicator size="large" color="#00ff00" />
-                                        </View>
-                                        :
-                                        <View>
-                                            <Text style={Styles.LabelAcceso}>Acceso Valido</Text>
-                                            <Text style={Styles.LabelUsuario}>usuario: </Text>
-                                            <Text style={Styles.LabelNombreUsuario}>{nombre_acceso}</Text>
-                                        </View>
-                                }
+                                {qrValido ? (
+                                    <View>
+                                        <ActivityIndicator size="large" color="#00ff00" />
+                                    </View>
+                                ) : (
+                                    <View>
+                                        <Text style={Styles.labelAcceso}>Acceso Valido</Text>
+                                        <Text style={Styles.labelUsuario}>Invitado: </Text>
+                                        <Text style={Styles.labelNombreUsuario}>{guestName}</Text>
+
+                                        <Text style={Styles.labelUsuario}>Fecha de Expiración: </Text>
+                                        <Text style={Styles.labelNombreUsuario}>{expirationDate}</Text>
+                                    </View>
+                                )}
                             </View>
                     }
 

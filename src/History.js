@@ -1,117 +1,147 @@
 /* eslint-disable no-unused-vars */
 import React, { Component } from 'react';
-import { View, Text, Alert, ActivityIndicator, TextInput, FlatList, StyleSheet, Button } from 'react-native';
+import { View, Text, Alert, ActivityIndicator, TextInput, FlatList, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import DatePicker from 'react-native-date-picker'
-
-const axios = require('axios').default;
+import DatePicker from 'react-native-date-picker';
+import axios from 'axios';
 
 class History extends Component {
-    
     constructor(props) {
         super(props);
-    const FechaDesde = new Date();
-    FechaDesde.setDate(FechaDesde.getDate() - 7);
+
+        const defaultStartDate = new Date();
+        defaultStartDate.setDate(defaultStartDate.getDate() - 7);
 
         this.state = {
             historial: [], // Lista completa del historial
             filteredHistorial: [], // Lista filtrada para mostrar
             isLoading: false,
             searchQuery: '', // Término de búsqueda
-            guestName: null,
-            entryDate: FechaDesde,
+            entryDate: defaultStartDate,
             exitDate: new Date(),
+            showDatePicker: false,
         };
-        this.arrayholder = [];
     }
 
     componentDidMount() {
-        this.getUserData();
+        this.loadUserData();
     }
 
-    getUserData = async () => {
+    // Carga los datos del usuario desde AsyncStorage
+    loadUserData = async () => {
         try {
-            const user = await AsyncStorage.getItem('userData');
-            const parsed = JSON.parse(user);
+            const userData = await AsyncStorage.getItem('userData');
+            const parsedUserData = JSON.parse(userData);
 
-            console.log('usuario:::::::: ', parsed);
-
-            if (parsed?.id && parsed?.idResidential) {
-                this.getHistory(parsed.id, parsed.idResidential);
+            if (parsedUserData?.id && parsedUserData?.idResidential) {
+                this.fetchHistory(parsedUserData.id, parsedUserData.idResidential);
             } else {
                 console.log('idSecurity o idResidential no existen en userData');
             }
         } catch (error) {
-            console.log(error);
+            this.logError('Error al cargar los datos del usuario:', error);
         }
     };
 
-    getHistory = async (idSecurity, idResidential) => {
+    // Obtiene el historial desde el servidor
+    fetchHistory = async (idSecurity, idResidential) => {
         this.setState({ isLoading: true });
 
-        const FechaDesde = this.state.entryDate;
-        const FechaHasta = this.state.exitDate;
+        const { entryDate, exitDate } = this.state;
 
-        const data = JSON.stringify({
-            idSecurity: idSecurity,
-            idResidential: idResidential,
-            startDate: FechaDesde,
-            endDate: FechaHasta,
-            showDatePicker: false,
+        const requestData = this.createHistoryRequestData(idSecurity, idResidential, entryDate, exitDate);
+
+        const config = this.createAxiosConfig(requestData);
+
+        try {
+            const response = await axios.request(config);
+            this.handleHistoryResponse(response);
+        } catch (error) {
+            this.handleHistoryError(error);
+        }
+    };
+
+    // Crea los datos para la solicitud del historial
+    createHistoryRequestData = (idSecurity, idResidential, startDate, endDate) => {
+        return JSON.stringify({
+            idSecurity,
+            idResidential,
+            startDate,
+            endDate,
         });
-        
-        console.log(data);
+    };
 
-        const config = {
+    // Crea la configuración para la solicitud Axios
+    createAxiosConfig = (data) => {
+        return {
             method: 'post',
             maxBodyLength: Infinity,
             url: 'https://wafleqr.site/ws/residentialsAccessHistory.php',
             headers: {
                 'Content-Type': 'application/json',
             },
-            data: data,
+            data,
         };
-
-        axios.request(config)
-            .then((response) => {
-                console.log("Respuesta completa del servidor: ", response.data);
-
-                if (response.data.Status) {
-                    const historial = response.data.AccessHistory; // Ajusta según la estructura real
-                    this.setState({
-                        historial: historial,
-                        filteredHistorial: historial, // Inicializa la lista filtrada
-                        isLoading: false,
-                    });
-                } else {
-                    Alert.alert('Error', 'No se pudo obtener el historial de visitas');
-                    this.setState({ isLoading: false });
-                }
-            })
-            .catch((error) => {
-                console.error("Error al obtener el historial: ", error);
-                Alert.alert('Error', 'Ocurrió un problema al obtener el historial de visitas', [{
-                    text: 'Aceptar',
-                }]);
-                this.setState({ isLoading: false });
-            });
     };
 
+    // Maneja la respuesta del servidor al obtener el historial
+    handleHistoryResponse = (response) => {
+        if (response.data.Status) {
+            const historial = response.data.AccessHistory || [];
+            this.setState({
+                historial,
+                filteredHistorial: historial,
+                isLoading: false,
+            });
+        } else {
+            this.showAlert('Error', 'No se pudo obtener el historial de visitas');
+            this.setState({ isLoading: false });
+        }
+    };
+
+    // Maneja errores al obtener el historial
+    handleHistoryError = (error) => {
+        this.logError('Error al obtener el historial:', error);
+        this.showAlert('Error', 'Ocurrió un problema al obtener el historial de visitas');
+        this.setState({ isLoading: false });
+    };
+
+    // Filtra el historial en función del término de búsqueda
     handleSearch = (text) => {
         const { historial } = this.state;
 
-        // Filtrar el historial en función del término de búsqueda
         const filteredHistorial = historial.filter((item) => {
-            const guestName = item.guestName.toLowerCase(); // Nombre del visitante
-            return guestName.includes(text.toLowerCase()); // Verifica si coincide con el término de búsqueda
+            const guestName = item.guestName.toLowerCase();
+            return guestName.includes(text.toLowerCase());
         });
 
-        // Actualizar el estado con los resultados filtrados
         this.setState({ searchQuery: text, filteredHistorial });
     };
 
+    // Maneja la selección de una fecha en el DatePicker
+    handleDateSelection = (date) => {
+        console.log('Fecha seleccionada:', date);
+        this.setState({ entryDate: date, showDatePicker: false });
+    };
+
+    // Maneja la cancelación del DatePicker
+    handleDatePickerCancel = () => {
+        console.log('Selección de fecha cancelada');
+        this.setState({ showDatePicker: false });
+    };
+
+    // Muestra una alerta con un mensaje
+    showAlert = (title, message) => {
+        Alert.alert(title, message, [{ text: 'Aceptar' }]);
+    };
+
+    // Registra errores en la consola
+    logError = (message, error) => {
+        console.error(message, error);
+    };
+
     render() {
-        const { filteredHistorial, isLoading, searchQuery } = this.state;
+        const { filteredHistorial, isLoading, searchQuery, showDatePicker, entryDate } = this.state;
 
         if (isLoading) {
             return <ActivityIndicator size="large" color="#0000ff" />;
@@ -124,29 +154,22 @@ class History extends Component {
                     style={styles.searchInput}
                     placeholder="Buscar en historial..."
                     value={searchQuery}
-                    onChangeText={this.handleSearch} // Llama a la función handleSearch
+                    onChangeText={this.handleSearch}
                 />
 
-                {/* <Button title="Open" onPress={() => this.setState({showDatePicker : true})} /> */}
+                {/* Selector de fecha */}
                 <DatePicker
                     modal
-                    open={this.state.showDatePicker}
-                    date={this.state.entryDate}
+                    open={showDatePicker}
+                    date={entryDate}
                     mode="date"
-                    onConfirm={(date) => {
-                      console.log('Fecha de entrada: ', date);
-                      this.setState({entryDate : date, showDatePicker : false})
-
-                    }}
-                    onCancel={() => {
-                        console.log('Cancelado');
-                        this.setState({showDatePicker : false})
-                    }}
+                    onConfirm={this.handleDateSelection}
+                    onCancel={this.handleDatePickerCancel}
                 />
 
                 {/* Lista del historial */}
                 <FlatList
-                    data={filteredHistorial} // Usa la lista filtrada
+                    data={filteredHistorial}
                     renderItem={({ item }) => (
                         <View style={styles.item}>
                             <Text>Nombre: {item.guestName}</Text>
@@ -154,7 +177,7 @@ class History extends Component {
                             <Text>Fecha de salida: {item.exitDate}</Text>
                         </View>
                     )}
-                    keyExtractor={(item, index) => index.toString()} // Usa el índice como clave
+                    keyExtractor={(item, index) => index.toString()}
                 />
             </View>
         );
